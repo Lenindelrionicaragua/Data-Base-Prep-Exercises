@@ -4,8 +4,8 @@ const util = require("util");
 const connection = mysql.createConnection({
   host: "localhost",
   user: "hyfuser",
-  password: "1111",
-  database: "recipes_table",
+  password: "hyfpassword",
+  database: "recipes_db",
 });
 
 // Promisify the connection.query method

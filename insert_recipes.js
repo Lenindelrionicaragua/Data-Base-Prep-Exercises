@@ -1,32 +1,41 @@
 const fs = require("fs");
-const { promisify } = require("util");
-const readFileAsync = promisify(fs.readFile);
+const mysql = require("mysql2/promise");
+const sqlParser = require("sql-parser");
 
-const { executeQuery, connection } = require("./database");
+const { connection } = require("./database");
 
-const insertRecipes = async () => {
+const runQueriesFromFile = async (filePath) => {
   try {
     // Read the SQL queries from the file
-    const queries = await readFileAsync("insert_recipes.sql", "utf8");
+    const content = fs.readFileSync(filePath, "utf8");
 
-    // Split the file content into individual queries
-    const individualQueries = queries.split(";");
+    // Parse the SQL queries
+    const queries = sqlParser.parse(content);
+
+    // Connect to the database
+    const conn = await mysql.createConnection(connection.config);
 
     // Execute each query
-    for (const query of individualQueries) {
-      if (query.trim() !== "") {
-        console.log(query);
-        await executeQuery(query);
+    for (const query of queries) {
+      const queryString = query.toString();
+      if (queryString.trim() !== "") {
+        console.log(queryString);
+        await conn.query(queryString);
       }
     }
 
-    console.log("Recipes inserted successfully.");
+    console.log("Queries executed successfully.");
   } catch (error) {
-    console.error("Error inserting recipes:", error);
+    console.error("Error executing queries:", error);
   } finally {
-    connection.end(); // Close the database connection
+    // Close the database connection
+    connection.end();
   }
 };
 
-// Run the function to insert recipes
-insertRecipes();
+// Ruta completa de tu archivo SQL
+const filePath =
+  "/Users/leninortizreyes/Desktop/Data-Base-Prep-Exercises/Insert_recipes.sql";
+
+// Run the function to execute queries from the file
+runQueriesFromFile(filePath);

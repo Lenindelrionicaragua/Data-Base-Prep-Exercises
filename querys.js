@@ -4,14 +4,15 @@ async function runQueries() {
   try {
     // Query 1: All vegetarian recipes with potatoes
     const query1 = `
-    SELECT DISTINCT r.*
-    FROM Recipes r
-    JOIN RecipeIngredients ri ON r.recipe_id = ri.recipe_id
-    JOIN Ingredients i ON ri.ingredient_id = i.ingredient_id
-    JOIN IngredientCategories ic ON i.ingredient_id = ic.ingredient_id
-    JOIN Categories c ON ic.category_id = c.category_id
-    WHERE c.category_name = 'Vegetarian'
-    AND i.ingredient_name = 'Potatoes'; 
+      SELECT DISTINCT r.*
+      FROM Recipe r
+      JOIN RecipeDetails rd ON r.recipe_id = rd.recipe_id
+      JOIN IngredientQuantities iq ON rd.recipe_details_id = iq.recipe_id
+      JOIN IngredientDetails id ON iq.ingredient_id = id.ingredient_id
+      JOIN Ingredients i ON id.ingredient_id = i.ingredient_id
+      JOIN Categories c ON i.category_id = c.category_id
+      WHERE c.category_name = 'Vegetarian'
+      AND i.ingredient_name = 'Potatoes';
     `;
 
     const result1 = await executeQuery(query1);
@@ -19,22 +20,16 @@ async function runQueries() {
 
     // Query 2: All cakes that do not need baking
     const query2 = `
-    SELECT *
-    FROM Recipes
-    WHERE baking_required = FALSE
-    AND recipe_id IN (
-        SELECT recipe_id
-        FROM RecipeIngredients
-        WHERE ingredient_id IN (
-            SELECT ingredient_id
-            FROM IngredientCategories
-            WHERE category_id = (
-                SELECT category_id
-                FROM Categories
-                WHERE category_name = 'Cake'
-            )
-        )
-    );
+      SELECT DISTINCT r.*
+      FROM Recipe r
+      JOIN RecipeDetails rd ON r.recipe_id = rd.recipe_id
+      JOIN RecipeCategories rc ON rd.recipe_details_id = rc.recipe_id
+      LEFT JOIN IngredientQuantities iq ON rd.recipe_details_id = iq.recipe_id
+      LEFT JOIN IngredientDetails id ON iq.ingredient_id = id.ingredient_id
+      LEFT JOIN Ingredients i ON id.ingredient_id = i.ingredient_id
+      LEFT JOIN Categories c ON rc.category_id = c.category_id
+      WHERE rd.baking_required = FALSE
+      AND c.category_name = 'Cake';
     `;
 
     const result2 = await executeQuery(query2);
@@ -42,11 +37,11 @@ async function runQueries() {
 
     // Query 3: All vegan and Japanese recipes
     const query3 = `
-    SELECT DISTINCT r.*
-    FROM Recipes r
-    JOIN RecipeCategories rc ON r.recipe_id = rc.recipe_id
-    JOIN Categories c ON rc.category_id = c.category_id
-    WHERE c.category_name IN ('Vegan', 'Japanese');
+      SELECT DISTINCT r.*
+      FROM Recipe r
+      JOIN RecipeCategories rc ON r.recipe_id = rc.recipe_id
+      JOIN Categories c ON rc.category_id = c.category_id
+      WHERE c.category_name IN ('Vegan', 'Japanese');
     `;
 
     const result3 = await executeQuery(query3);
