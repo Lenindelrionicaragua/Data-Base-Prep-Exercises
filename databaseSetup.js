@@ -1,31 +1,47 @@
-const { MongoClient } = require("mongodb");
+const { MongoClient, ServerApiVersion } = require("mongodb");
 require("dotenv").config();
 
-const url = process.env.MONGODB_URL;
-const dbName = "recipes_db";
+const databaseUrl =
+  process.env.MONGODB_URL || "mongodb://localhost:27017/recipes_db";
 
 async function setupDatabase() {
-  const client = new MongoClient(url, {
+  if (process.env.MONGODB_URL == null) {
+    throw new Error(
+      "Error: The MONGODB_URL environment variable is not set. Please create a '.env' file and add the variable."
+    );
+  }
+
+  const client = new MongoClient(process.env.MONGODB_URL, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
+    serverApi: ServerApiVersion.v1,
   });
 
   try {
     await client.connect();
     console.log("Connected to the database");
-
-    const db = client.db(dbName);
-
-    // Check if the connection is successful
-    const adminDb = client.db("admin");
-    const pingResult = await adminDb.command({ ping: 1 });
-    console.log("Ping result:", pingResult);
-  } catch (error) {
-    console.error("Error connecting to the database:", error.message);
-  } finally {
-    await client.close();
-    console.log("Connection closed");
+    return client;
+  } catch (err) {
+    console.error("Error connecting to the database:", err.message);
+    throw new Error(
+      "Unable to connect to the database. Please check your connection settings and try again."
+    );
   }
 }
 
-module.exports = { setupDatabase };
+async function closeDatabase(client) {
+  try {
+    await client.close();
+    console.log("Connection closed");
+  } catch (err) {
+    console.error("Error closing the database connection:", err.message);
+    throw new Error(
+      "Unable to close the database connection. Please check your connection and try again."
+    );
+  }
+}
+
+module.exports = {
+  setupDatabase,
+  closeDatabase,
+};
